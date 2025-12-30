@@ -1,0 +1,180 @@
+
+
+/* Smooth font and reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+}
+
+/* Body background & text */
+body {
+  background-color: var(--bs-body-bg) !important;
+  color: var(--bs-body-color) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* Links */
+a {
+  text-decoration: none;
+  color: var(--bs-primary);
+}
+a:hover {
+  color: hsl(195, 85%, 65%);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--bs-border-color);
+  border-radius: 10px;
+}
+
+/* Utility spacing for page containers */
+.container,
+.container-fluid {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+/* Text color utilities */
+.text-muted {
+  color: var(--bs-muted-foreground) !important;
+}
+
+/* Optional: smooth transitions */
+button,
+a,
+input,
+.card {
+  transition: all 0.2s ease;
+}
+
+
+body {
+  background-color: hsl(215, 25%, 10%) !important;
+  color: hsl(210, 40%, 98%) !important;
+}
+
+/* Cards */
+.card {
+  background: linear-gradient(90deg, hsl(215, 25%, 12%) 0%, hsl(215, 25%, 10%) 100%) !important;
+  color: hsl(210, 40%, 98%) !important;
+  border: 1px solid hsl(215, 20%, 25%) !important;
+}
+
+/* Card headers */
+.card-header {
+  background-color: hsl(215, 25%, 15%) !important;
+  color: hsl(210, 40%, 98%) !important;
+  border-bottom: 1px solid hsl(215, 20%, 25%) !important;
+}
+
+/* Modals */
+.modal-content {
+  background-color: hsl(215, 25%, 12%) !important;
+  color: hsl(210, 40%, 98%) !important;
+  border: 1px solid hsl(215, 20%, 25%) !important;
+}
+
+/* Forms */
+.form-control,
+.form-select {
+  background-color: hsl(215, 25%, 15%) !important;
+  color: hsl(210, 40%, 98%) !important;
+  border: 1px solid hsl(215, 20%, 25%) !important;
+}
+
+.form-control::placeholder {
+  color: hsl(215, 20%, 70%) !important;
+}
+
+/* Muted text */
+.text-muted {
+  color: hsl(215, 20%, 70%) !important;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: hsl(210, 80%, 50%) !important;
+  border-color: hsl(210, 80%, 50%) !important;
+}
+
+.btn-secondary {
+  background-color: hsl(215, 20%, 20%) !important;
+  border-color: hsl(215, 20%, 20%) !important;
+  color: hsl(210, 40%, 98%) !important;
+}
+
+.btn-secondary:hover {
+  background-color: hsl(215, 25%, 25%) !important;
+}
+
+/* Input focus */
+.form-control:focus,
+.form-select:focus {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Progress bar */
+.progress {
+  background-color: hsl(215, 25%, 15%) !important;
+}
+
+/* Sidebar adjustments for responsiveness */
+@media (min-width: 992px) {
+  aside {
+    transform: translateX(0) !important;
+  }
+}
+
+@media (min-width: 992px) {
+  .admin-content {
+    margin-left: 240px !important;
+  }
+}
+
+/* Navbar */
+
+
+@media (max-width: 576px) {
+  .card {
+    padding: 0.5rem;
+  }
+  h2, h3, h4 {
+    font-size: 1rem !important;
+  }
+  .container {
+    padding: 0.75rem !important;
+  }
+}
+
+
+
+@media (max-width: 768px) {
+  .card {
+    font-size: 0.9rem;
+    padding: 0.75rem;
+  }
+  .card-header h5,
+  .fw-bold {
+    font-size: 1rem !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .card {
+    padding: 0.5rem;
+  }
+  h2, h3, h4 {
+    font-size: 1rem !important;
+  }
+  .container {
+    padding: 0.75rem !important;
+  }
+}

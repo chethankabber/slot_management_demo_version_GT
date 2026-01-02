@@ -3,6 +3,8 @@ import { Pencil, Trash2, Package } from "lucide-react";
 import PurchaseItemModal from "./PurchaseItemModal";
 import api from "../../../api/axios";
 import NotificationToast from "../../common/NotificationToast";
+import { DEMO_MODE } from "../../../config/demo";
+import { demoPurchaseItems } from "../../../demo/adminDemoData";
 
 const PurchaseItemSection = ({ onRefresh, refreshKey }) => {
   const [items, setItems] = useState([]);
@@ -19,13 +21,20 @@ const PurchaseItemSection = ({ onRefresh, refreshKey }) => {
      LOAD ITEMS FROM BACKEND
      ========================= */
   const loadItems = async () => {
-    try {
-      const res = await api.get("/purchase-items/all");
-      setItems(res.data.data || []);
-    } catch (err) {
-      console.error("Failed to load purchase items", err);
-    }
-  };
+
+  if (DEMO_MODE) {
+    setItems(demoPurchaseItems);
+    return;
+  }
+
+  try {
+    const res = await api.get("/purchase-items/all");
+    setItems(res.data.data || []);
+  } catch (err) {
+    console.error("Failed to load purchase items", err);
+  }
+};
+
 
   useEffect(() => {
     loadItems();
@@ -35,32 +44,23 @@ const PurchaseItemSection = ({ onRefresh, refreshKey }) => {
      ADD / UPDATE ITEM
      ========================= */
   const handleSave = async (data) => {
-    try {
-      if (editItem) {
-        await api.put(`/purchase-items/update/${editItem._id}`, data);
-        // setToast({
-        //   show: true,
-        //   message: "Item updated successfully!",
-        //   bg: "success",
-        // });
-      } else {
-        await api.post("/purchase-items/add", data);
-        
-      }
 
-      await loadItems();
-      onRefresh && onRefresh();
-      
-      setShowModal(false);
-      setEditItem(null);
-    } catch (err) {
-      setToast({
-        show: true,
-        message: err?.response?.data?.message || "Save failed",
-        bg: "danger",
-      });
-    }
-  };
+  if (DEMO_MODE) {
+    setItems(prev => {
+      if (editItem) {
+        return prev.map(i =>
+          i._id === editItem._id ? { ...i, ...data } : i
+        );
+      }
+      return [...prev, { ...data, _id: Date.now().toString() }];
+    });
+
+    setShowModal(false);
+    setEditItem(null);
+    return;
+  }
+
+};
 
 
   /* =========================

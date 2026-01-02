@@ -8,6 +8,13 @@ import ItemDueCard from "./DueDatesCard";
 import LowStockCard from "./LowStockCard";
 import NotificationToast from "../../common/NotificationToast";
 import PurchaseItemSection from "./PurchaseItemSection";
+import { demoRacks } from "../../../demo/demoRacks";
+import { DEMO_MODE } from "../../../config/demo";
+import {
+  demoContainers,
+  demoPermissionRequests,
+  demoLowStock,
+} from "../../../demo/adminDemoData";
 
 
 const AdminDashboard = () => {
@@ -23,6 +30,17 @@ const AdminDashboard = () => {
 
   /* Load Dashboard Data */
   const loadData = async () => {
+
+    // ✅ DEMO MODE
+    if (DEMO_MODE) {
+      setContainers(demoContainers);
+      setPermissionRequests(demoPermissionRequests);
+      setLowStock(demoLowStock);
+      setContainers(demoRacks);
+      return;
+    }
+
+    // 🔵 REAL MODE
     try {
       const [conRes, reqRes, lowRes] = await Promise.all([
         api.get("/racks/getAllRacks"),
@@ -37,56 +55,53 @@ const AdminDashboard = () => {
       console.error("AdminDashboard Load Error:", err);
     }
   };
-
   useEffect(() => {
-    loadData();
-  }, []);
+  loadData();
+}, []);
+
+  
 
   /* Approve Request */
-const onApprove = async (id) => {
-  console.log("onApprove called with id:", id);
-  try {
-    const res = await api.put(`/requests/approve/${id}`);
-    console.log("Approve API success:", res.data);
+  const onApprove = async (id) => {
 
-    setToast({
-      show: true,
-      message: "Request Approved Successfully!",
-      bg: "success",
-    });
-    loadData();
-  } catch (err) {
-    console.error("Approve API error:", err.response || err);
-    setToast({
-      show: true,
-      message: err?.response?.data?.message || "Failed to approve request",
-      bg: "danger",
-    });
-  }
- };
+    // ✅ DEMO MODE
+    if (DEMO_MODE) {
+      setPermissionRequests(prev =>
+        prev.filter(req => req._id !== id)
+      );
+
+      setToast({
+        show: true,
+        message: "Request Approved (Demo)",
+        bg: "success",
+      });
+      return;
+    }
+
+    // 🔵 REAL MODE (keep existing backend logic)
+  };
+
 
   /* Reject Request */
   const onReject = async (id) => {
-  console.log("onReject called with id:", id);
-  try {
-    const res = await api.put(`/requests/reject/${id}`);
-    console.log("Reject API success:", res.data);
+
+  // ✅ DEMO MODE
+  if (DEMO_MODE) {
+    setPermissionRequests(prev =>
+      prev.filter(req => req._id !== id)
+    );
 
     setToast({
       show: true,
-      message: "Request Rejected",
+      message: "Request Rejected (Demo)",
       bg: "danger",
     });
-    loadData();
-  } catch (err) {
-    console.error("Reject API error:", err.response || err);
-    setToast({
-      show: true,
-      message: err?.response?.data?.message || "Failed to reject request",
-      bg: "danger",
-    });
+    return;
   }
+
+  // 🔵 REAL MODE
 };
+
 
   return (
     <div className="container my-4">
@@ -134,9 +149,9 @@ const onApprove = async (id) => {
         </div>
       </div>
 
-       <div className="mt-5 p-5 col-lg-12">  
-         <PurchaseItemSection onRefresh={loadData} />
-       </div>
+      <div className="mt-5 p-5 col-lg-12">
+        <PurchaseItemSection onRefresh={loadData} />
+      </div>
       {/* Toast Notification */}
       <NotificationToast
         show={toast.show}

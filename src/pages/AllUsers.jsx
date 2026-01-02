@@ -3,6 +3,9 @@ import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import api from "../api/axios";
 import NotificationToast from "../components/common/NotificationToast";
+import { DEMO_MODE } from "../config/demo";
+import { demoAdminUsers } from "../demo/demoAdminUsers";
+
 import {
   User,
   Mail,
@@ -14,6 +17,7 @@ import {
   Copy,
 } from "lucide-react";
 
+/* ---------------- PASSWORD GENERATOR ---------------- */
 const generatePassword = (length = 12) => {
   const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const lower = "abcdefghijklmnopqrstuvwxyz";
@@ -31,25 +35,36 @@ const generatePassword = (length = 12) => {
   for (let i = pwd.length; i < length; i++) {
     pwd.push(all[Math.floor(Math.random() * all.length)]);
   }
+
   return pwd.sort(() => Math.random() - 0.5).join("");
 };
 
 const AllUsers = () => {
-  const [users, setUsers] = useState([]);
+  /* ---------------- STATE ---------------- */
+  const [users, setUsers] = useState(() => {
+    if (DEMO_MODE) {
+      return demoAdminUsers.map((u) => ({
+        ...u,
+        joinDate: u.joined.split("T")[0],
+      }));
+    }
+    return [];
+  });
 
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+ const [editMode, setEditMode] = useState(false);
+ const [editUserId, setEditUserId] = useState(null);
+ const [deleteUserId, setDeleteUserId] = useState(null);
+ const [deleteUserName, setDeleteUserName] = useState("");
 
-  const [editMode, setEditMode] = useState(false);
-  const [editUserId, setEditUserId] = useState(null);
-  const [deleteUserId, setDeleteUserId] = useState(null);
-  const [deleteUserName, setDeleteUserName] = useState("");
+
+
   const [toast, setToast] = useState({
     show: false,
     message: "",
     bg: "success",
   });
-
 
   const [form, setForm] = useState({
     id: null,
@@ -63,27 +78,31 @@ const AllUsers = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // ================= LOAD USERS =================
+  /* ---------------- LOAD USERS (REAL MODE) ---------------- */
   useEffect(() => {
+    if (DEMO_MODE) return;
+
     const fetchUsers = async () => {
       try {
-        const response = await api.get("/admin/getAllUsers");
-
-        const formattedUsers = response.data.data.map((u) => ({
+        const res = await api.get("/admin/getAllUsers");
+        const formatted = res.data.data.map((u) => ({
           ...u,
           joinDate: u.joined ? u.joined.split("T")[0] : "-",
         }));
-
-        setUsers(formattedUsers);
-      } catch (error) {
-        console.log("fetchUsers err:", error)
-        setToast({ show: true, message: "Failed to load users", bg: "danger", });
+        setUsers(formatted);
+      } catch {
+        setToast({
+          show: true,
+          message: "Failed to load users",
+          bg: "danger",
+        });
       }
     };
 
     fetchUsers();
   }, []);
 
+  /* ---------------- VALIDATION ---------------- */
   const validate = () => {
     const e = {};
     if (!form.name.trim()) e.name = "Name required";
@@ -100,79 +119,88 @@ const AllUsers = () => {
     setErrors({});
   };
 
-  // ================ ADD / EDIT USER =================
+  /* ---------------- ADD / EDIT USER ---------------- */
   const handleUserSubmit = async (ev) => {
     ev.preventDefault();
+
     const e = validate();
-    if (Object.keys(e).length > 0) return setErrors(e);
+    if (Object.keys(e).length > 0) {
+      setErrors(e);
+      return;
+    }
 
-    const convertedRole = form.role.toLowerCase();
+    const role = form.role.toLowerCase();
 
-    try {
-      if (editMode) {
-        const userId = form.id;
+    /* -------- EDIT -------- */
+    if (editMode) {
+      if (DEMO_MODE) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u._id === form.id
+              ? { ...u, name: form.name, email: form.email, phone: form.phone, role }
+              : u
+          )
+        );
 
-        if (!userId) {
-          setToast({
-            show: true,
-            message: "User ID missing. Please reopen edit.",
-            bg: "danger",
-          });
-          return;
-        }
-        console.log("User ID1:", form.id);
+        setToast({ show: true, message: "User updated (Demo)", bg: "success" });
+      } else {
         await api.put(`/admin/editUser/${form.id}`, {
-
           name: form.name,
           email: form.email,
           phone: form.phone,
-          role: convertedRole,
+          role,
         });
 
         setUsers((prev) =>
           prev.map((u) =>
             u._id === form.id
-              ? { ...u, name: form.name, email: form.email, phone: form.phone, role: convertedRole }
+              ? { ...u, name: form.name, email: form.email, phone: form.phone, role }
               : u
           )
         );
-        setToast({ show: true, message: "User updated ✔", bg: "success", });
 
+        setToast({ show: true, message: "User updated ✔", bg: "success" });
+      }
+    }
+    /* -------- ADD -------- */
+    else {
+      if (DEMO_MODE) {
+        const newUser = {
+          _id: `demo-${Date.now()}`,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          role,
+          joinDate: new Date().toISOString().split("T")[0],
+        };
+
+        setUsers((prev) => [newUser, ...prev]);
+        setToast({ show: true, message: "User added (Demo)", bg: "success" });
       } else {
-        const response = await api.post("/admin/addUser", {
+        const res = await api.post("/admin/addUser", {
           name: form.name,
           email: form.email,
           phone: form.phone,
           password: generatedPassword || generatePassword(),
-          role: convertedRole,
+          role,
         });
 
         const newUser = {
-          ...response.data.data,
-          joinDate: response.data.data.joined.split("T")[0],
+          ...res.data.data,
+          joinDate: res.data.data.joined.split("T")[0],
         };
 
         setUsers((prev) => [newUser, ...prev]);
-        setToast({ show: true, message: "User added ✔", bg: "success", });
-
+        setToast({ show: true, message: "User added ✔", bg: "success" });
       }
-    } catch (err) {
-      setToast({
-        show: true,
-        message: err.response?.data?.message || "Action failed",
-        bg: "danger",
-      });
-      return;
     }
 
     resetForm();
     setEditMode(false);
     setShowModal(false);
-
-
   };
 
-  // ================ DELETE USER =================
+  /* ---------------- DELETE USER ---------------- */
   const confirmDelete = (id, name) => {
     setDeleteUserId(id);
     setDeleteUserName(name);
@@ -180,19 +208,27 @@ const AllUsers = () => {
   };
 
   const handleDeleteUser = async () => {
+    if (DEMO_MODE) {
+      setUsers((prev) => prev.filter((u) => u._id !== deleteUserId));
+      setToast({ show: true, message: "User removed (Demo)", bg: "success" });
+      setShowDeleteModal(false);
+      return;
+    }
+
     try {
       await api.delete(`/admin/deleteUser/${deleteUserId}`);
       setUsers((prev) => prev.filter((u) => u._id !== deleteUserId));
-      setToast({ show: true, message: "User removed!", bg: "success", });
-
+      setToast({ show: true, message: "User removed!", bg: "success" });
     } catch {
-      setToast({ show: true, message: "Delete failed ", bg: "danger", });
+      setToast({ show: true, message: "Delete failed", bg: "danger" });
     }
+
     setShowDeleteModal(false);
   };
 
+  /* ---------------- JSX (UNCHANGED) ---------------- */
   return (
-    <div className="container my-4">
+  <div className="container my-4">
       <NotificationToast show={toast.show} message={toast.message} bg={toast.bg}
         onClose={() => setToast((prev) => ({ ...prev, show: false }))} />
       {/* HEADER */}
@@ -440,5 +476,6 @@ const AllUsers = () => {
     </div>
   );
 };
+
 
 export default AllUsers;

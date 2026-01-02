@@ -3,6 +3,10 @@ import React, { useState, useEffect } from "react";
 import { UserCircle, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import { DEMO_MODE } from "../../config/demo";
+import { demoApprovedRequests } from "../../demo/managerDemoData";
+import { demoContainers, demoLowStock } from "../../demo/adminDemoData";
+
 import NotificationToast from "../../components/common/NotificationToast";
 
 // Manager Components
@@ -33,33 +37,55 @@ const ManagerDashboard = () => {
     navigate(`/manager/racks?jumpRack=${rackId}&jumpSlot=${slotNumber}`);
   };
   
+const loadLimitedStock = async () => {
+  // ✅ DEMO MODE
+  if (DEMO_MODE) {
+    setLowStock(demoLowStock);
+    return;
+  }
 
-  const loadLimitedStock = async () => {
   try {
     const res = await api.get("/manager/limitedStock");
     setLowStock(res.data.data || []);
   } catch (err) {
     console.error("Failed to fetch limited stock:", err);
   }
- }; 
+};
+
 
   const loadApproved = async () => {
-    try {
-      const res = await api.get("/manager/getApprovedRequests");
-      setApprovedPermissions(res.data.data || []);
-    } catch (err) {
-      console.error("Failed to fetch approved:", err);
-    }
-  };
+  // ✅ DEMO MODE
+  if (DEMO_MODE) {
+    setApprovedPermissions(demoApprovedRequests);
+    return;
+  }
 
-  const loadRacks = async () => {
-    try {
-      const res = await api.get("/racks/getAllRacks");
-      setRacks(res.data.data || []);
-    } catch (err) {
-      console.error("Failed to fetch racks:", err);
-    }
-  };
+  // 🔵 REAL MODE
+  try {
+    const res = await api.get("/manager/getApprovedRequests");
+    setApprovedPermissions(res.data.data || []);
+  } catch (err) {
+    console.error("Failed to fetch approved:", err);
+  }
+};
+
+const loadRacks = async () => {
+  // ✅ DEMO MODE
+  if (DEMO_MODE) {
+    setRacks(demoContainers);
+    return;
+  }
+
+  // 🔵 REAL MODE
+  try {
+    const res = await api.get("/racks/getAllRacks");
+    setRacks(res.data.data || []);
+  } catch (err) {
+    console.error("Failed to fetch racks:", err);
+  }
+};
+
+
 
 const loadData = async () => {
   await Promise.all([

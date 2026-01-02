@@ -1,20 +1,36 @@
-import axios from "axios";  //Axios is a library to make HTTP requests
+import axios from "axios";
+import { DEMO_MODE } from "../config/demo"; // 👈 ADD THIS
 
-const api = axios.create({              //Create Axios instance
-  baseURL: "http://192.168.100.33:8000/api",  //   //192.168.100.33:8000
+const api = axios.create({
+  baseURL: "http://192.168.100.33:8000/api",  //localhost:8000
 });
 
-api.interceptors.request.use((config) => {     //An interceptor is a function that runs:Before every request is sent /Every request goes through here first.
+api.interceptors.request.use(
+  (config) => {
 
-  const token = localStorage.getItem("token");   //Stored in browser memory. and retrieved when needed.
- 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-    console.log("🚀 Sending Token:", token);
-    console.log("📌 Authorization Header:", config.headers.Authorization);
-  }
-  
-  return config;                                 //If you don’t return config: Request will never be sent / App will break / 
-});                                              //this  config contain all the request details (URL, method, headers, data)
+    // DEMO MODE → STOP BACKEND CALLS
+    if (DEMO_MODE) {
+      console.log("DEMO MODE: Backend call blocked:", config.url);
+
+      // Reject request intentionally
+      return Promise.reject({
+        isDemoBlocked: true,
+        message: "Demo mode: backend disabled",
+        config,
+      });
+    }
+
+    // REAL MODE → attach token
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      console.log("🚀 Sending Token:", token);
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 export default api;

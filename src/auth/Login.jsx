@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import NotificationToast from "../components/common/NotificationToast";
+import { DEMO_MODE } from "../config/demo";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -21,22 +22,52 @@ const Login = () => {
 
 const demoLogin = async (role) => {
   try {
+    // 🟡 DEMO MODE → FRONTEND ONLY LOGIN
+    if (DEMO_MODE) {
+      const fakeUser = {
+        id: "demo_user",
+        name: `${role.toUpperCase()} Demo`,
+        email: `${role}@demo.com`,
+        role: role,
+      };
+
+      const fakeToken = `demo-token-${role}`;
+
+      // Store demo auth
+      localStorage.setItem("token", fakeToken);
+      localStorage.setItem("user", JSON.stringify(fakeUser));
+      localStorage.setItem("role", role);
+
+      showToast(`Demo login successful as ${role}`, "success");
+
+      // Navigate by role
+      setTimeout(() => {
+        if (role === "admin") navigate("/admin/dashboard");
+        else if (role === "manager") navigate("/manager/dashboard");
+        else if (role === "user") navigate("/users/dashboard");
+      }, 500);
+
+      return; // ⛔ stop here, no backend
+    }
+
+    // 🔵 REAL MODE → BACKEND LOGIN
     const res = await api.post("/auth/demo-login", { role });
 
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("user", JSON.stringify(res.data.user));
-    localStorage.setItem("role", res.data.user.role);
+    const token = res.data.token;
+    const user = res.data.user;
 
-    //ROUTES
-    if (role === "admin") navigate("/admin/dashboard");
-    else if (role === "manager") navigate("/manager/dashboard");
-    else if (role === "user") navigate("/users/dashboard");
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem("role", user.role);
 
   } catch (err) {
-    console.error(err);
-    alert("Demo login failed");
+    console.error("Demo login error:", err);
+    showToast("Demo login failed", "danger");
   }
 };
+
+
+
 
 
 

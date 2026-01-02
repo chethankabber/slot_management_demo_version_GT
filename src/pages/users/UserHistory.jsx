@@ -1,6 +1,7 @@
 // src/pages/users/UserHistory.jsx
 import React, { useEffect, useState } from "react";
-import api from "../../api/axios";
+import { DEMO_MODE } from "../../config/demo";
+import { demoHistory } from "../../demo/demoData";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Search, Calendar, Package } from "lucide-react";
 
@@ -10,33 +11,34 @@ const UserHistory = () => {
   const [filterType, setFilterType] = useState("all");
   const [error, setError] = useState("");
 
+  const formatDate = (value) => {
+  if (!value || value === "-") return "-";
+  return new Date(value).toISOString().split("T")[0];
+};
+
   // Fetch user history from backend
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const response = await api.get("/users/history");
-        const formatted = response.data.data.map((h, index) => ({
-          id: index,
-          item: h.itemName,
-          qty: h.quantity,
-          project: h.project,
-          takenDate: h.takenDate.split("T")[0],
-          returnedDate: h.returnDate !== "-" ? h.returnDate.split("T")[0] : "-",
-          status:
-            h.status === "not-returned"
-              ? "Not Returned"
-              : h.status === "returned"
-              ? "Returned"
-              : "Non-Returnable",
-        }));
-        setHistory(formatted);
-      } catch (err) {
-        setError("Failed to load history");
-      }
-    };
+  if (DEMO_MODE) {
+    const formatted = demoHistory.map((h, index) => ({
+      id: index,
+      item: h.itemName,
+      qty: h.quantity,
+      project: h.project,
+      takenDate: formatDate(h.takenDate),
+      returnedDate: formatDate(h.returnDate),
+      status:
+        h.status === "not-returned"
+          ? "Not Returned"
+          : h.status === "returned"
+          ? "Returned"
+          : "Non-Returnable",
+    }));
 
-    fetchHistory();
-  }, []);
+    setHistory(formatted);
+    return;
+  }
+}, []);
+
 
   // Filter logic
   const filtered = history.filter((h) => {

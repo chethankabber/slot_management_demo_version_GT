@@ -45,9 +45,7 @@ const AdminProfile = () => {
     }
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  
 
   // Save profile + password
   const handleSave = async () => {
@@ -115,7 +113,7 @@ const AdminProfile = () => {
         newPassword: "",
         confirmPassword: "",
       });
-      fetchProfile();
+     
     } catch (err) {
       setToast({
         show: true,
@@ -165,9 +163,9 @@ const AdminProfile = () => {
 
           <div style={{ flex: 1 }}>
             <div className="fw-bold" style={{ fontSize: "1.25rem" }}>
-              {form.name || "Admin"}
+              {form.name || "User Name"}
             </div>
-            <div style={{ opacity: 0.7 }}>{form.role}</div>
+            <div style={{ opacity: 0.7 }}>{form.role} (role)</div>
           </div>
 
           <Button variant="primary" onClick={() => setEditMode(!editMode)}>
@@ -181,7 +179,7 @@ const AdminProfile = () => {
             <div className="col-md-6 mb-3">
               <Form.Label>Email</Form.Label>
               <Form.Control
-                value={form.email}
+                value="admin@demo.com"
                 disabled
                 // disabled={!editMode}
                 // onChange={(e) =>
@@ -193,7 +191,7 @@ const AdminProfile = () => {
             <div className="col-md-6 mb-3">
               <Form.Label>Phone</Form.Label>
               <Form.Control
-                value={form.phone}
+                value="8877990011"
                 disabled={!editMode}
                 onChange={(e) =>
                   setForm({ ...form, phone: e.target.value })
@@ -204,7 +202,7 @@ const AdminProfile = () => {
             <div className="col-md-6 mb-3">
               <Form.Label>Name</Form.Label>
               <Form.Control
-                value={form.name}
+                value="Admin name"
                 disabled={!editMode}
                 onChange={(e) =>
                   setForm({ ...form, name: e.target.value })

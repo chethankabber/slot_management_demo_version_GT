@@ -4,40 +4,11 @@ import React, { useEffect, useState } from "react";
 import api from "../../api/axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Calendar, Package } from "lucide-react";
+import { isDemoBlocked } from "../../utils/isDemoBlocked";
 
-const UserBorrowedItems = () => {
-  const [borrowed, setBorrowed] = useState([]);
+const UserBorrowedItems = ({ borrowed = [] }) => {
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const fetchBorrowedItems = async () => {
-      try {
-        const res = await api.get("/users/borrowed");
-
-        const formatted = res.data.data.map((item, index) => ({
-          id: index,
-          itemName: item.itemName,
-          project: item.project,
-          quantity: item.quantity,
-          takenDate: item.takenDate ? item.takenDate.split("T")[0] : "-",
-          returnDate:
-            item.returnDate && item.returnDate !== "-"
-              ? item.returnDate.split("T")[0]
-              : "N-R",
-          status: item.status,
-          daysLeft: item.daysLeft,
-          overdueDays: item.overdueDays,
-        }));
-
-        setBorrowed(formatted);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load borrowed items");
-      }
-    };
-
-    fetchBorrowedItems();
-  }, []);
 
   return (
     <div className="container my-4 border border-secondary">
@@ -55,9 +26,7 @@ const UserBorrowedItems = () => {
           </p>
         )}
 
-        {error && (
-          <p className="text-danger text-center">{error}</p>
-        )}
+        
 
         {borrowed.map((item) => (
           <div
@@ -73,18 +42,18 @@ const UserBorrowedItems = () => {
               color: "white",
               boxShadow: "0 0 10px rgba(63,124,255,0.15)",
             }}
-            // onMouseEnter={(e) => {
-            //   e.currentTarget.style.border =
-            //     "2px solid hsl(215, 80%, 70%)";
-            //   e.currentTarget.style.boxShadow =
-            //     "0 0 12px rgba(63,124,255,0.45)";
-            // }}
-            // onMouseLeave={(e) => {
-            //   e.currentTarget.style.border =
-            //     "2px solid hsl(215, 20%, 30%)";
-            //   e.currentTarget.style.boxShadow =
-            //     "0 0 10px rgba(63,124,255,0.15)";
-            // }}
+          // onMouseEnter={(e) => {
+          //   e.currentTarget.style.border =
+          //     "2px solid hsl(215, 80%, 70%)";
+          //   e.currentTarget.style.boxShadow =
+          //     "0 0 12px rgba(63,124,255,0.45)";
+          // }}
+          // onMouseLeave={(e) => {
+          //   e.currentTarget.style.border =
+          //     "2px solid hsl(215, 20%, 30%)";
+          //   e.currentTarget.style.boxShadow =
+          //     "0 0 10px rgba(63,124,255,0.15)";
+          // }}
           >
             <div className="d-flex justify-content-between">
               {/* LEFT */}
@@ -92,7 +61,7 @@ const UserBorrowedItems = () => {
                 <h5 className="fw-bol mb-1">
                   <Package size={16} className="me-1 text-primary" />
                   {item.itemName}
-                </h5> 
+                </h5>
                 <h6 className=" mb-1">
                   Project : {item.project}
                 </h6>
@@ -124,33 +93,33 @@ const UserBorrowedItems = () => {
                   </span>
                 ) : item.daysLeft !== null ? (
                   <span style={{ color: "#90ee90" }}>
-                    {item.daysLeft} Days Left
+                     Days Left : 2
                   </span>
                 ) : (
                   <span style={{ color: "gray" }}>-</span>
                 )}
 
-                {item.status === "non-returnable" && (
+                {/* {item.status === "non-returnable" && (
                   <div className="badge bg-info mt-2">
                     Non-Returnable
                   </div>
-                )} 
-                   <div>
-                    <small
-                  className="d-flex align-items-center gap-2"
-                  style={{ color: "hsl(215,15%,70%)" }}
-                >
-                  <Calendar size={14} /> Taken Date: {item.takenDate}
-                </small>
+                )} */}
+                <div>
+                  <small
+                    className="d-flex align-items-center gap-2"
+                    style={{ color: "hsl(215,15%,70%)" }}
+                  >
+                    <Calendar size={14} /> Taken Date: {item.takenDate}
+                  </small>
 
-                <small
-                  className="d-flex align-items-center gap-2"
-                  style={{ color: "hsl(215,15%,70%)" }}
-                >
-                  <Calendar size={14} /> Return Date:{" "}
-                  {item.returnDate !== "-" ? item.returnDate : "N-R"}
-                </small>
-                  </div>
+                  <small
+                    className="d-flex align-items-center gap-2"
+                    style={{ color: "hsl(215,15%,70%)" }}
+                  >
+                    <Calendar size={14} /> Return Date:{" "}
+                    {item.returnDate !== "-" ? item.returnDate : "N-R"}
+                  </small>
+                </div>
               </div>
             </div>
           </div>

@@ -151,9 +151,9 @@ const ManagerProfile = () => {
 
           <div style={{ flex: 1 }}>
             <div className="fw-bold" style={{ fontSize: "1.2rem" }}>
-              {form.name}
+              user name
             </div>
-            <div style={{ color: "hsl(215,15%,75%)" }}>{form.role}</div>
+            <div style={{ color: "hsl(215,15%,75%)" }}>{form.role} (role)</div>
           </div>
 
           <Button variant="primary" onClick={() => setEditMode(!editMode)}>
@@ -167,7 +167,7 @@ const ManagerProfile = () => {
             <div className="col-md-6 mb-3">
               <Form.Label>Email</Form.Label>
               <Form.Control
-                value={form.email}
+                value= "manager@demo.com"
                 disabled={!editMode}
               />
             </div>
@@ -175,7 +175,7 @@ const ManagerProfile = () => {
             <div className="col-md-6 mb-3">
               <Form.Label>Phone</Form.Label>
               <Form.Control
-                value={form.phone}
+                value= "9988776655"
                 disabled={!editMode}
                 onChange={(e) =>
                   setForm({ ...form, phone: e.target.value })
@@ -186,7 +186,7 @@ const ManagerProfile = () => {
             <div className="col-md-6 mb-3">
               <Form.Label>Name</Form.Label>
               <Form.Control
-                value={form.name}
+                value= "Manager Name"
                 disabled={!editMode}
                 onChange={(e) =>
                   setForm({ ...form, name: e.target.value })

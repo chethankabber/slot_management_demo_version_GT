@@ -4,6 +4,8 @@ import { Modal } from "react-bootstrap";
 import api from "../../../api/axios";
 import { Maximize2, X } from "lucide-react";  
 import NotificationToast from "../../common/NotificationToast";
+import { DEMO_MODE } from "../../../config/demo";
+import { demoDueDates } from "../../../demo/adminDemoData";
 
 
 const ItemDueCard = () => {
@@ -42,13 +44,20 @@ const ItemDueCard = () => {
 
 
   const fetchDueDates = async () => {
-    try {
-      const res = await api.get("/manager/dueDates");
-      setRows(res.data?.data || []);
-    } catch {
-      setRows([]);
-    }
-  };
+
+  if (DEMO_MODE) {
+    setRows(demoDueDates);
+    return;
+  }
+
+  try {
+    const res = await api.get("/manager/dueDates");
+    setRows(res.data?.data || []);
+  } catch {
+    setRows([]);
+  }
+};
+
 
   useEffect(() => {
     fetchDueDates();

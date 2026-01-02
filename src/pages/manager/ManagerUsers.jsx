@@ -1,10 +1,20 @@
 import React, { useEffect, useState } from "react";
 import api from "../../api/axios";
+import { DEMO_MODE } from "../../config/demo";
+import { demoUsers } from "../../demo/demoUsers";
+
 
 const ManagerUsers = () => {
   const [users, setUsers] = useState([]);
 
-  const fetchUsers = async () => {
+    const fetchUsers = async () => {
+    //  DEMO MODE
+    if (DEMO_MODE) {
+      setUsers(demoUsers);
+      return;
+    }
+
+    //  REAL MODE
     try {
       const res = await api.get("/manager/users");
       setUsers(res.data.data);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
-
+import { DEMO_MODE } from "../../config/demo";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 
@@ -21,15 +21,20 @@ const UniversalLayout = ({ role }) => {
     }
 
     const fetchUser = async () => {
-      try {
-        const res = await api.get("/users/profile");
-        setCurrentUser(res.data.data);
-      } catch (error) {
-        console.error("Failed to load user", error);
-        localStorage.removeItem("token");
-        navigate("/login");
-      }
-    };
+  // DEMO MODE → DO NOT CALL BACKEND
+  if (DEMO_MODE) {
+    const demoUser = JSON.parse(localStorage.getItem("user"));
+    setCurrentUser(demoUser);
+    return;
+  }
+
+  try {
+    const res = await api.get("/users/profile");
+    setCurrentUser(res.data.data);
+  } catch (err) {
+    console.error("Failed to load user", err);
+  }
+};
 
     fetchUser();
   }, [navigate]);

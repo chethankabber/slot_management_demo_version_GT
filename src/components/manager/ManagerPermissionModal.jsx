@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Form } from "react-bootstrap";
-import api from "../../api/axios";
+import { Modal, Button } from "react-bootstrap";
 import NotificationToast from "../common/NotificationToast";
 import PurchaseItemModal from "../admin/dashboard/PurchaseItemModal";
+import api from "../../api/axios";
+import { DEMO_MODE } from "../../config/demo";
+import { demoItemAvailability } from "../../demo/managerDemoData";
+import { demoItemAvailabilityMap } from "../../demo/managerDemoData";
 
-const ManagerPermissionModal = ({ show, onClose, request, onGiven, onRefresh }) => {
+const ManagerPermissionModal = ({
+  show,
+  onClose,
+  request,
+  onGiven,
+  onRefresh,
+}) => {
   const [availability, setAvailability] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [issueQty, setIssueQty] = useState(0);
@@ -27,6 +36,16 @@ const ManagerPermissionModal = ({ show, onClose, request, onGiven, onRefresh }) 
     setSelectedSlot(null);
     setIssueQty(0);
 
+    //  DEMO MODE
+   if (DEMO_MODE) {
+  const demoData =
+    demoItemAvailabilityMap[request.itemName] || [];
+  setAvailability(demoData);
+  return;
+}
+
+
+    // 🔵 REAL MODE
     api
       .get(`/manager/itemAvailability/${request.itemName}`)
       .then((res) => setAvailability(res.data.data || []))
@@ -37,20 +56,18 @@ const ManagerPermissionModal = ({ show, onClose, request, onGiven, onRefresh }) 
      AUTO SELECT BEST SLOT
      ========================= */
   useEffect(() => {
-    if (availability.length > 0) {
+    if (availability.length > 0 && request) {
       const bestSlot = availability.reduce((max, curr) =>
         curr.remaining > max.remaining ? curr : max
       );
 
       setSelectedSlot(bestSlot);
-      setIssueQty(
-        Math.min(bestSlot.remaining, request.quantity)
-      );
+      setIssueQty(Math.min(bestSlot.remaining, request.quantity));
     } else {
       setSelectedSlot(null);
       setIssueQty(0);
     }
-  }, [availability, request?.quantity]);
+  }, [availability, request]);
 
   if (!request) return null;
 
@@ -79,6 +96,22 @@ const ManagerPermissionModal = ({ show, onClose, request, onGiven, onRefresh }) 
       return;
     }
 
+    // ✅ DEMO MODE
+    if (DEMO_MODE) {
+      setToast({
+        show: true,
+        message: `Issued ${issueQty} item(s) (Demo)`,
+        bg: "success",
+      });
+
+      setTimeout(() => {
+        onGiven && onGiven();
+        onClose();
+      }, 600);
+      return;
+    }
+
+    // 🔵 REAL MODE
     try {
       await api.post(`/manager/giveItem/${request._id}`, {
         rackName: selectedSlot.rackName,
@@ -93,10 +126,10 @@ const ManagerPermissionModal = ({ show, onClose, request, onGiven, onRefresh }) 
       });
 
       setTimeout(() => {
-        onGiven();
+        onGiven && onGiven();
         onClose();
       }, 800);
-    } catch (err) {
+    } catch {
       setToast({
         show: true,
         message: "Failed to issue item",
@@ -105,8 +138,8 @@ const ManagerPermissionModal = ({ show, onClose, request, onGiven, onRefresh }) 
     }
   };
 
- /* =========================
-     OPEN PURCHASE MODAL 
+  /* =========================
+     OPEN PURCHASE MODAL
      ========================= */
   const addToPurchaseList = () => {
     const missingQty =
@@ -123,103 +156,131 @@ const ManagerPermissionModal = ({ show, onClose, request, onGiven, onRefresh }) 
     setShowPurchaseModal(true);
   };
 
-
   /* =========================
      UI
      ========================= */
   return (
     <>
-    <Modal show={show} onHide={onClose} centered>
-      <Modal.Header closeButton className="text-white" style={{ background: "hsl(215,25%,10%)" }}>
-        <Modal.Title>Give Item To User</Modal.Title>
-      </Modal.Header>
-
-      <Modal.Body className="text-white" style={{ background: "hsl(215,25%,20%)" }}>
-        {/* USER INFO */}
-        <p><strong>User:</strong> {request.user.name}</p>
-        <p><strong>Email:</strong> {request.user.email}</p>
-        <hr />
-
-        {/* ITEM INFO */}
-        <p><strong>Item:</strong> {request.itemName}</p>
-        <p><strong>Qty Requested:</strong> {request.quantity}</p>
-        <p><strong>Project:</strong> {request.project}</p>
-
-        <p><strong>Returnable:</strong> {request.isReturnable ? "Yes" : "No"}</p>
-
-        {formattedReturnDate && (
-          <p><strong>Return Date:</strong> {formattedReturnDate}</p>
-        )}
-
-        <p><strong>Message:</strong> {request.message?.trim() || "-"}</p>
-
-        <hr />
-
-        {/* SLOT INFO */}
-        <p>Rack Name: <strong>{selectedSlot?.rackName || "-"}</strong></p>
-        <p>Slot Name: <strong>{selectedSlot?.slotName || "-"}</strong></p>
-
-        {selectedSlot && (
-          <>
-            <p>Remaining Quantity: <strong>{selectedSlot.remaining}</strong></p>
-
-            {/* <Form.Group className="mt-2">
-              <Form.Label>Issue Quantity</Form.Label>
-              <Form.Control
-                type="number"
-                min={1}
-                max={selectedSlot.remaining}
-                value={issueQty}
-                onChange={(e) =>
-                  setIssueQty(
-                    Math.min(Number(e.target.value), selectedSlot.remaining)
-                  )
-                }
-              />
-            </Form.Group> */}
-          </>
-        )}
-
-        {/* WARNINGS + PURCHASE */}
-        {availability.length === 0 && (
-          <div className="mt-3">
-            <p className="text-warning">⚠️ Item not available in any rack</p>
-            <Button size="sm" variant="outline-warning" onClick={addToPurchaseList}>
-              + Add to Purchase List
-            </Button>
-          </div>
-        )}
-
-        {selectedSlot && selectedSlot.remaining < request.quantity && (
-          <div className="mt-3">
-            <p className="text-danger">
-              Only {selectedSlot.remaining} available
-            </p>
-            <Button size="sm" variant="outline-warning" onClick={addToPurchaseList}>
-              + Add to Purchase List
-            </Button>
-          </div>
-        )}
-      </Modal.Body>
-
-      <Modal.Footer className="bg-dark" style={{ borderTop: "1px solid hsl(215,20%,25%)" }}>
-        <Button
-          variant="success"
-          onClick={handleGiveItem}
-          disabled={!selectedSlot || issueQty < 1}
+      <Modal show={show} onHide={onClose} centered>
+        <Modal.Header
+          closeButton
+          className="text-white"
+          style={{ background: "hsl(215,25%,10%)" }}
         >
-          Issue Item ✓
-        </Button>
-      </Modal.Footer>
+          <Modal.Title>Give Item To User</Modal.Title>
+        </Modal.Header>
 
-      <NotificationToast
-        show={toast.show}
-        onClose={() => setToast({ ...toast, show: false })}
-        message={toast.message}
-        bg={toast.bg}
-      />
-    </Modal>
-     {/*  PURCHASE ITEM MODAL */}
+        <Modal.Body
+          className="text-white"
+          style={{ background: "hsl(215,25%,20%)" }}
+        >
+          {/* USER INFO */}
+          <p>
+            <strong>User:</strong> {request.user.name}
+          </p>
+          <p>
+            <strong>Email:</strong> {request.user.email}
+          </p>
+          <hr />
+
+          {/* ITEM INFO */}
+          <p>
+            <strong>Item:</strong> {request.itemName}
+          </p>
+          <p>
+            <strong>Qty Requested:</strong> {request.quantity}
+          </p>
+          <p>
+            <strong>Project:</strong> {request.project}
+          </p>
+
+          <p>
+            <strong>Returnable:</strong>{" "}
+            {request.isReturnable ? "Yes" : "No"}
+          </p>
+
+          {formattedReturnDate && (
+            <p>
+              <strong>Return Date:</strong> {formattedReturnDate}
+            </p>
+          )}
+
+          <p>
+            <strong>Message:</strong> {request.message?.trim() || "-"}
+          </p>
+
+          <hr />
+
+          {/* SLOT INFO */}
+          <p>
+            Rack Name: <strong>{selectedSlot?.rackName || "-"}</strong>
+          </p>
+          <p>
+            Slot Name: <strong>{selectedSlot?.slotName || "-"}</strong>
+          </p>
+
+          {selectedSlot && (
+            <p>
+              Remaining Quantity:{" "}
+              <strong>{selectedSlot.remaining}</strong>
+            </p>
+          )}
+
+          {/* WARNINGS + PURCHASE */}
+          {availability.length === 0 && (
+            <div className="mt-3">
+              <p className="text-warning">
+                ⚠️ Item not available in any rack
+              </p>
+              <Button
+                size="sm"
+                variant="outline-warning"
+                onClick={addToPurchaseList}
+              >
+                + Add to Purchase List
+              </Button>
+            </div>
+          )}
+
+          {selectedSlot &&
+            selectedSlot.remaining < request.quantity && (
+              <div className="mt-3">
+                <p className="text-danger">
+                  Only {selectedSlot.remaining} available
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline-warning"
+                  onClick={addToPurchaseList}
+                >
+                  + Add to Purchase List
+                </Button>
+              </div>
+            )}
+        </Modal.Body>
+
+        <Modal.Footer
+          className="bg-dark"
+          style={{ borderTop: "1px solid hsl(215,20%,25%)" }}
+        >
+          <Button
+            variant="success"
+            onClick={handleGiveItem}
+            disabled={!selectedSlot || issueQty < 1}
+          >
+            Issue Item ✓
+          </Button>
+        </Modal.Footer>
+
+        <NotificationToast
+          show={toast.show}
+          onClose={() => setToast({ ...toast, show: false })}
+          message={toast.message}
+          bg={toast.bg}
+        />
+      </Modal>
+
+      {/* PURCHASE ITEM MODAL */}
       {showPurchaseModal && (
         <PurchaseItemModal
           show={showPurchaseModal}
@@ -230,6 +291,21 @@ const ManagerPermissionModal = ({ show, onClose, request, onGiven, onRefresh }) 
           }}
           onSave={async (data) => {
             try {
+              // ✅ DEMO MODE
+              if (DEMO_MODE) {
+                setToast({
+                  show: true,
+                  message: "Added to purchase list (Demo)",
+                  bg: "success",
+                });
+
+                onRefresh && onRefresh();
+                setShowPurchaseModal(false);
+                setPurchaseDraft(null);
+                return;
+              }
+
+              // 🔵 REAL MODE
               await api.post("/purchase-items/add", data);
 
               setToast({
@@ -237,7 +313,7 @@ const ManagerPermissionModal = ({ show, onClose, request, onGiven, onRefresh }) 
                 message: "Added to purchase list",
                 bg: "success",
               });
-              
+
               onRefresh && onRefresh();
               setShowPurchaseModal(false);
               setPurchaseDraft(null);

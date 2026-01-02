@@ -1,7 +1,8 @@
-// src/pages/Containers.jsx
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import api from "../api/axios";
+import { DEMO_MODE } from "../config/demo";
+import { demoRacks } from "../demo/demoRacks";
 
 import SearchBar from "../components/admin/SearchBar";
 import AddRackModal from "../components/admin/racks/AddRackModal";
@@ -10,12 +11,14 @@ import NotificationToast from "../components/common/NotificationToast";
 
 const Containers = () => {
   const location = useLocation();
-  const [containers, setContainers] = useState([]);
+
+  const [containers, setContainers] = useState(() =>
+    structuredClone(demoRacks)
+  );
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchResult, setSearchResult] = useState("");
   const [showRackModal, setShowRackModal] = useState(false);
 
-  // Toast State
   const [toast, setToast] = useState({
     show: false,
     message: "",
@@ -26,7 +29,12 @@ const Containers = () => {
   const jumpRack = params.get("jumpRack");
   const jumpSlot = params.get("jumpSlot");
 
+  /* =========================
+     FETCH (REAL MODE ONLY)
+     ========================= */
   const fetchRacks = async () => {
+    if (DEMO_MODE) return;
+
     try {
       const res = await api.get("/racks/getAllRacks");
       setContainers(res.data.data);
@@ -39,135 +47,166 @@ const Containers = () => {
     fetchRacks();
   }, []);
 
-  // ADD ITEM
-  const handleAddItem = async (rackId, slotId, itemObj) => {
-  try {
-    console.log("🟢 ADD ITEM API:", rackId, slotId, itemObj);
+  /* =========================
+     ADD ITEM
+     ========================= */
+  const handleAddItem = (rackId, slotId, itemObj) => {
+  if (DEMO_MODE) {
+    setContainers(prev =>
+      prev.map(rack => {
+        // ✅ FIX: support both id and _id
+        const rackMatch = rack.id === rackId || rack._id === rackId;
+        if (!rackMatch) return rack;
 
-    await api.post(
-      `/racks/addItem/${rackId}/${slotId}`,
-      itemObj // 🔥 SEND FULL PAYLOAD AS-IS
+        return {
+          ...rack,
+          slots: rack.slots.map(slot => {
+            if (slot.slotId !== slotId) return slot;
+
+            return {
+              ...slot,
+              items: [
+                ...slot.items,
+                {
+                  itemId: `item-${Date.now()}`,
+                  itemName: itemObj.itemName || itemObj.name,
+                  total: itemObj.total ?? itemObj.quantity,
+                  remaining: itemObj.remaining ?? itemObj.quantity,
+                  ...itemObj,
+                  takenHistory: [],
+                },
+              ],
+            };
+          }),
+        };
+      })
     );
 
-    fetchRacks();
-
     setToast({
       show: true,
-      message: "Item added successfully!",
+      message: "Item added (Demo)",
       bg: "success",
     });
-  } catch (err) {
-    console.error("Add Item Error:", err.response?.data || err);
-    setToast({
-      show: true,
-      message: err.response?.data?.message || "Failed to add item!",
-      bg: "danger",
-    });
+
+    return;
   }
+
+  // 🔵 REAL MODE
+  api.post(`/racks/addItem/${rackId}/${slotId}`, itemObj)
+     .then(fetchRacks);
 };
 
 
-  useEffect(() => {
-    if (!jumpRack || !jumpSlot) return;
+  /* =========================
+     ADD RACK
+     ========================= */
+ const handleCreateRack = (rackName, slotsCount) => {
+  if (DEMO_MODE) {
+    const newRack = {
+      id: `rack_${Date.now()}`,
+      rackName,
+      slots: Array.from({ length: slotsCount }, (_, i) => ({
+        slotId: `slot_${Date.now()}_${i}`,
+        slotNumber: i + 1,
+        slotName: `Slot ${i + 1}`,
+        items: [],
+      })),
+    };
 
-    const t = setTimeout(() => {
-      const el = document.getElementById(`rack-${jumpRack}-slot-${jumpSlot}`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.style.boxShadow = "0 0 12px 6px skyblue";
-        setTimeout(() => (el.style.boxShadow = "none"), 1500);
-      }
-    }, 500);
+    setContainers((prev) => [...prev, newRack]);
 
-    return () => clearTimeout(t);
-  }, [jumpRack, jumpSlot]);
+    setToast({
+      show: true,
+      message: "Rack created successfully (Demo)",
+      bg: "success",
+    });
+    return;
+  }
 
-  // ADD RACK
-  const handleCreateRack = async (rackName, slotsCount) => {
-    try {
-      await api.post("/racks/addRack", { rackName, slotsCount });
-      fetchRacks();
+  // real API logic stays here
+};
 
-      setToast({
-        show: true,
-        message: "Rack created successfully!",
-        bg: "success",
-      });
 
-    } catch (err) {
-      setToast({
-        show: true,
-        message: "Failed to create rack!",
-        bg: "danger",
-      });
+  /* =========================
+     ADD SLOT
+     ========================= */
+  const handleAddSlot = rackId => {
+    if (DEMO_MODE) {
+      setContainers(prev =>
+        prev.map(r =>
+          r.id === rackId
+            ? {
+                ...r,
+                slots: [
+                  ...r.slots,
+                  {
+                    slotId: `slot-${Date.now()}`,
+                    slotNumber: r.slots.length + 1,
+                    slotName: `Slot ${r.slots.length + 1}`,
+                    items: [],
+                  },
+                ],
+              }
+            : r
+        )
+      );
+
+      setToast({ show: true, message: "Slot added (Demo)", bg: "success" });
+      return;
     }
+
+    api
+      .post(`/racks/addSlot/${rackId}`)
+      .then(fetchRacks)
+      .catch(() =>
+        setToast({ show: true, message: "Failed to add slot", bg: "danger" })
+      );
   };
 
-  // ADD SLOT
-  const handleAddSlot = async (rackId) => {
-    try {
-      await api.post(`/racks/addSlot/${rackId}`);
-      fetchRacks();
-      
-      setToast({
-        show: true,
-        message: "Slot added successfully!",
-        bg: "success",
-      });
+  /* =========================
+     DELETE SLOT
+     ========================= */
+  const handleDeleteSlot = (rackId, slotId) => {
+    if (DEMO_MODE) {
+      setContainers(prev =>
+        prev.map(r =>
+          r.id === rackId
+            ? { ...r, slots: r.slots.filter(s => s.slotId !== slotId) }
+            : r
+        )
+      );
 
-    } catch (err) {
-      setToast({
-        show: true,
-        message: "Failed to add slot!",
-        bg: "danger",
-      });
+      setToast({ show: true, message: "Slot deleted (Demo)", bg: "warning" });
+      return;
     }
+
+    api
+      .delete(`/racks/deleteSlot/${rackId}/${slotId}`)
+      .then(fetchRacks)
+      .catch(() =>
+        setToast({ show: true, message: "Failed to delete slot", bg: "danger" })
+      );
   };
 
-  // DELETE SLOT
-  const handleDeleteSlot = async (rackId, slotId) => {
-    try {
-      await api.delete(`/racks/deleteSlot/${rackId}/${slotId}`);
-      fetchRacks();
-      // onRefresh(); //Today
-      setToast({
-        show: true,
-        message: "Slot deleted!",
-        bg: "warning",
-      });
-
-    } catch (err) {
-      setToast({
-        show: true,
-        message: "Failed to delete slot",
-        bg: "danger",
-      });
+  /* =========================
+     DELETE RACK
+     ========================= */
+  const handleDeleteRack = rackId => {
+    if (DEMO_MODE) {
+      setContainers(prev => prev.filter(r => r.id !== rackId));
+      setToast({ show: true, message: "Rack deleted (Demo)", bg: "warning" });
+      return;
     }
+
+    api
+      .delete(`/racks/deleteRack/${rackId}`)
+      .then(fetchRacks)
+      .catch(() =>
+        setToast({ show: true, message: "Failed to delete rack", bg: "danger" })
+      );
   };
 
-  // DELETE RACK
-  const handleDeleteRack = async (rackId) => {
-    try {
-      await api.delete(`/racks/deleteRack/${rackId}`);
-      fetchRacks();
-      // fetchRacks();
-
-      setToast({
-        show: true,
-        message: "Rack deleted",
-        bg: "warning",
-      });
-
-    } catch (err) {
-      setToast({
-        show: true,
-        message: "Failed to delete rack",
-        bg: "danger",
-      });
-    }
-  };
-
-  const onFilterChange = (f) => {
+  const onFilterChange = f => {
     setActiveFilter(f);
     setSearchResult(`Filter: ${f}`);
     setTimeout(() => setSearchResult(""), 1200);
@@ -195,10 +234,9 @@ const Containers = () => {
       {searchResult && <div className="alert alert-info mt-3">{searchResult}</div>}
 
       <div className="d-flex flex-column gap-4">
-        {containers.map((container) => (
-          
+        {containers.map(container => (
           <ContainerGrid
-            key={container._id}   // .id or ._id
+            key={container.id}
             container={container}
             activeFilter={activeFilter}
             onAddSlot={handleAddSlot}
@@ -213,10 +251,7 @@ const Containers = () => {
       <AddRackModal
         show={showRackModal}
         onClose={() => setShowRackModal(false)}
-        onCreate={(rackName, slotsCount) =>
-          handleCreateRack(rackName, slotsCount)
-        }
-        reload={fetchRacks} 
+        onCreate={handleCreateRack}
       />
 
       <NotificationToast

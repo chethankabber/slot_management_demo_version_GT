@@ -1,54 +1,37 @@
 import React, { useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
-import api from "../../../api/axios";
 import NotificationToast from "../../common/NotificationToast";
 
-const AddRackModal = ({ show, onClose, reload }) => {
+const AddRackModal = ({ show, onClose, onCreate }) => {
   const [rackName, setRackName] = useState("");
   const [slotCount, setSlotCount] = useState(1);
 
   const [toast, setToast] = useState({
     show: false,
     message: "",
-    bg: "success",
+    bg: "danger",
   });
 
   const showToast = (message, bg = "danger") => {
     setToast({ show: true, message, bg });
   };
 
-  const handleCreate = async () => {
+  const handleCreate = () => {
     if (!rackName.trim()) {
-      showToast("Please enter rack name", "danger");
+      showToast("Please enter rack name");
       return;
     }
 
-    try {
-      await api.post("/racks/addRack", {
-        rackName,
-        slotsCount: slotCount,
-      });
+    // 🔥 delegate logic to parent
+    onCreate(rackName, slotCount);
 
-      showToast("Rack created successfully!", "success");
-      
-      setRackName("");
-      setSlotCount(1);
-
-      // Close after short delay so toast is visible
-      setTimeout(() => {
-        onClose();
-         if (reload) reload();  //Today
-      }, 700);
-    
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to create rack!", "danger");
-    }
+    setRackName("");
+    setSlotCount(1);
+    onClose();
   };
 
   return (
     <>
-      {/* Notification Toast */}
       <NotificationToast
         show={toast.show}
         onClose={() => setToast({ ...toast, show: false })}
@@ -60,6 +43,7 @@ const AddRackModal = ({ show, onClose, reload }) => {
         <Modal.Header closeButton>
           <Modal.Title>Add New Rack</Modal.Title>
         </Modal.Header>
+
         <Modal.Body>
           <Form>
             <Form.Group>

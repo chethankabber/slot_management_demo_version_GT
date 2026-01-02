@@ -100,13 +100,13 @@ export const demoRacks = [
       {
         slotId: "slot3",
         slotNumber: 5,
-        slotName: "C1",
+        slotName: "Slot C1",
         items: [],
       },
       {
         slotId: "slot2",
         slotNumber: 2,
-        slotName: "C2",
+        slotName: "Slot C2",
         items: [
           {
             itemId: "item2",
@@ -125,7 +125,7 @@ export const demoRacks = [
       {
         slotId: "slot3",
         slotNumber: 3,
-        slotName: "C3",
+        slotName: "Slot C3",
         items: [
           {
             itemId: "item3",
@@ -144,7 +144,7 @@ export const demoRacks = [
       {
         slotId: "slot4",
         slotNumber: 4,
-        slotName: "B4",
+        slotName: "Slot B4",
         items: [],
       },
     ],
@@ -156,25 +156,25 @@ export const demoRacks = [
       {
         slotId: "slot1",
         slotNumber: 1,
-        slotName: "B1",
+        slotName: "Slot B1",
         items: [],
       },
       {
         slotId: "slot2",
         slotNumber: 2,
-        slotName: "B2",
+        slotName: "Slot B2",
         items: [],
       },
       {
         slotId: "slot3",
         slotNumber: 3,
-        slotName: "B3",
+        slotName: "Slot B3",
         items: [],
       },
       {
         slotId: "slot4",
         slotNumber: 4,
-        slotName: "B4",
+        slotName: "Slot B4",
         items: [],
       },
     ],
